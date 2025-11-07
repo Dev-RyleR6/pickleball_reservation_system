@@ -7,14 +7,14 @@ const SALT_ROUNDS = 10;
 
 export async function register(req, res, next) {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: "Missing fields" });
 
     const existing = await getUserByEmail(email);
     if (existing) return res.status(400).json({ error: "Email already registered" });
 
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
-    const user = await createUser({ name, email, passwordHash: hash, role: role || "player" });
+    const user = await createUser({ name, email, passwordHash: hash, role:"player" });
 
     res.status(201).json({ message: "User created", user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (err) { next(err); }
