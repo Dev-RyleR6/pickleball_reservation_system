@@ -5,7 +5,7 @@ export async function listCourts() {
   return rows;
 }
 
-export async function getCourtById(id) {
+export async function findCourtById(id) {
   const [rows] = await pool.query("SELECT * FROM courts WHERE id = ?", [id]);
   return rows[0];
 }
@@ -16,4 +16,10 @@ export async function createCourt({ name, location, status = "available" }) {
     [name, location, status]
   );
   return { id: res.insertId, name, location, status };
+}
+
+export async function updateCourtStatus(id, status) {
+  await pool.query("UPDATE courts SET status = ? WHERE id = ?", [status, id]);
+  const court = await findCourtById(id);
+  return court;
 }
