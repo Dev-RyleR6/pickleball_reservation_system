@@ -27,7 +27,7 @@ const Reservations: React.FC = () => {
           {reservations.map((resv) => (
             <li key={resv.id} className="mb-2 p-4 border rounded shadow">
               <p>
-                Court ID: {resv.courtId} | Date: {resv.date} | Time Slot: {resv.timeSlot}
+                Court ID: {resv.courtId} | Date: {resv.date} | Time Slot: {resv.time}
               </p>
             </li>
           ))}

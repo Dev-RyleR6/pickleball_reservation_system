@@ -4,14 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, User, Settings, LogOut, ChevronDown, CalendarDays, Clock, Plus, Bell, Ticket, Grid
 } from "lucide-react";
-import api from "../api/api"; // Axios instance with JWT
-
-interface Reservation {
-  court: string;
-  time: string;
-  date: string;
-  reservedByCurrentUser: boolean;
-}
+import courtService from "../api/courtService";
+import reservationService from "../api/reservationService";
+import type { Reservation } from "../types/reservation";
+import type { Court } from "../types/court";
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -19,7 +15,7 @@ const Dashboard: React.FC = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const [currentReservation, setCurrentReservation] = useState<Reservation | null>(null);
-  const [allCourts, setAllCourts] = useState<Reservation[]>([]);
+  const [allCourts, setAllCourts] = useState<Court[]>([]);
   const [loading, setLoading] = useState(true);
 
   const handleLogout = () => {
@@ -27,40 +23,45 @@ const Dashboard: React.FC = () => {
     navigate("/login");
   };
 
-  // Fetch reservations from backend
-  const fetchReservations = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      // Fetch all reservations
-      const res = await api.get<Reservation[]>("/reservations");
-      // Find the next reservation for the current user
-      const myNext = res.data.find(r => r.reservedByCurrentUser) || null;
+
+      // Fetch all courts
+      const courts = await courtService.getAllCourts();
+      setAllCourts(courts);
+
+      // Fetch reservations
+      const reservations = await reservationService.getAllReservations();
+
+      // Set current user's next reservation
+      const myNext = reservations.find(r => r.reservedByCurrentUser) || null;
       setCurrentReservation(myNext);
-      setAllCourts(res.data);
+
     } catch (err) {
-      console.error("Failed to fetch reservations", err);
+      console.error("Failed to fetch dashboard data", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchReservations();
+    fetchData();
   }, []);
 
-  const cancelReservation = async (reservation: Reservation) => {
+  const cancelReservation = async (reservationId: string) => {
     try {
-      await api.delete(`/reservations/${reservation.court}`); // adjust endpoint
-      fetchReservations();
+      await reservationService.cancelReservation(reservationId);
+      fetchData();
     } catch (err) {
       console.error(err);
     }
   };
 
-  const reserveCourt = async (court: string) => {
+  const reserveCourt = async (courtId: string) => {
     try {
-      await api.post("/reservations", { court });
-      fetchReservations();
+      await reservationService.createReservation(courtId, "2025-11-08", "10:00 AM"); // adapt date/time dynamically
+      fetchData();
     } catch (err) {
       console.error(err);
     }
@@ -73,11 +74,11 @@ const Dashboard: React.FC = () => {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-indigo-600">Courtly</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Courtly</h1>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          <button className="flex items-center gap-3 px-4 py-2 rounded-lg bg-indigo-50 text-indigo-600 font-semibold">
+          <button className="flex items-center gap-3 px-4 py-2 rounded-lg bg-gray-100 text-gray-800 font-semibold">
             <LayoutDashboard size={20} /> Dashboard
           </button>
           <button className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
@@ -117,6 +118,7 @@ const Dashboard: React.FC = () => {
             </h1>
             <p className="text-gray-500">Here's what's happening today.</p>
           </div>
+
           <div className="flex items-center gap-4">
             <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700">
               <Bell size={20} />
@@ -168,14 +170,14 @@ const Dashboard: React.FC = () => {
                   <h2 className="text-xl font-semibold text-gray-800 mb-4">
                     Your Next Reservation
                   </h2>
-                  <div className="bg-white rounded-lg border border-indigo-300 shadow-sm p-6 flex flex-col md:flex-row md:items-center md:justify-between shadow-indigo-50">
+                  <div className="bg-white rounded-lg border border-gray-300 shadow-sm p-6 flex flex-col md:flex-row md:items-center md:justify-between">
                     <div className="flex items-center gap-4 mb-4 md:mb-0">
-                      <div className="p-3 bg-indigo-100 rounded-lg">
-                        <Ticket size={24} className="text-indigo-600" />
+                      <div className="p-3 bg-gray-100 rounded-lg">
+                        <Ticket size={24} className="text-gray-700" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-800">
-                          {currentReservation.court}
+                          {currentReservation.courtName}    
                         </h3>
                         <p className="text-gray-600">{currentReservation.date}</p>
                         <p className="text-gray-600 font-medium">{currentReservation.time}</p>
@@ -183,7 +185,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <button
                       className="mt-auto w-full md:w-auto bg-white text-red-600 border border-red-300 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
-                      onClick={() => cancelReservation(currentReservation)}
+                      onClick={() => cancelReservation(currentReservation.id)}
                     >
                       Cancel Reservation
                     </button>
@@ -204,7 +206,7 @@ const Dashboard: React.FC = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">All Courts</h2>
                 <button
-                  className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors"
                   onClick={() => navigate("/book")}
                 >
                   <Plus size={18} /> Book a Court
@@ -216,31 +218,31 @@ const Dashboard: React.FC = () => {
                   <div
                     key={idx}
                     className={`bg-white rounded-lg border p-6 flex flex-col ${
-                      court.reservedByCurrentUser
-                        ? "border-indigo-300 opacity-75"
-                        : "border-gray-200"
+                      court.availableSlots
+                        ? "border-gray-300"
+                        : "border-gray-200 opacity-75"
                     }`}
                   >
-                    <CalendarDays size={24} className="text-indigo-500 mb-3" />
-                    <h3 className="text-lg font-semibold mb-2 text-gray-800">{court.court}</h3>
+                    <CalendarDays size={24} className="text-gray-700 mb-3" />
+                    <h3 className="text-lg font-semibold mb-2 text-gray-800">{court.name}</h3>
                     <div className="flex items-center gap-2 text-gray-500 text-sm mb-4">
                       <Clock size={16} />
                       <span>
-                        {court.reservedByCurrentUser
-                          ? `Reserved: ${court.time}`
-                          : `Next slot: ${court.time}`}
+                        {court.availableSlots
+                          ? `Next slot: ${court.availableSlots}`
+                          : "No availability"}
                       </span>
                     </div>
                     <button
                       className={`mt-auto w-full py-2 rounded-lg transition-colors ${
-                        court.reservedByCurrentUser
-                          ? "bg-indigo-100 text-indigo-700 cursor-not-allowed"
-                          : "bg-indigo-600 text-white hover:bg-indigo-700"
+                        court.availableSlots
+                          ? "bg-gray-800 text-white hover:bg-gray-900"
+                          : "bg-gray-100 text-gray-500 cursor-not-allowed"
                       }`}
-                      disabled={court.reservedByCurrentUser}
-                      onClick={() => reserveCourt(court.court)}
+                      disabled={!court.availableSlots}
+                      onClick={() => reserveCourt(court.id.toString())}
                     >
-                      {court.reservedByCurrentUser ? "Reserved by You" : "Reserve Now"}
+                      {court.availableSlots ? "Reserve Now" : "Unavailable"}
                     </button>
                   </div>
                 ))}

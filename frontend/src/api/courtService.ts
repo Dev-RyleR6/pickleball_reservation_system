@@ -5,7 +5,7 @@ import type { Court } from "../types/court";
 const courtService = {
   getAllCourts: async (): Promise<Court[]> => {
     try {
-      const res = await api.get<Court[]>("/courts");
+      const res = await api.get<Court[]>("/api/courts");
       return res.data;
     } catch (err) {
       console.error("Failed to fetch courts:", err);
@@ -15,7 +15,7 @@ const courtService = {
 
   getCourtById: async (courtId: string): Promise<Court> => {
     try {
-      const res = await api.get<Court>(`/courts/${courtId}`);
+      const res = await api.get<Court>(`/api/courts/${courtId}`);
       return res.data;
     } catch (err) {
       console.error(`Failed to fetch court ${courtId}:`, err);
