@@ -1,19 +1,17 @@
 import api from "./api";
-import type { User } from "../types/user";
+import type {LoginResponse } from "../types/user";
 
-export interface LoginResponse {
-  success: boolean;
-  message: string;
-  token: string;
-  user: User;
-}
 
 export const login = async (email: string, password: string): Promise<LoginResponse> => {
-  const res = await api.post<LoginResponse>("/auth/login", { email, password });
+  const res = await api.post("/auth/login", { email, password });
   localStorage.setItem("token", res.data.token);
-  return res.data;
+  return { token: res.data.token, user: res.data.user };
 };
 
-export const logout = (): void => {
+export const register = async (name: string, email: string, password: string) => {
+  return await api.post("/auth/register", { name, email, password });
+};
+
+export const logout = () => {
   localStorage.removeItem("token");
 };

@@ -1,20 +1,13 @@
-import * as React from 'react';
-import { createRoot } from 'react-dom/client';
-import App from "./App";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import AppRouter from "./routes/AppRouter";
 import { AuthProvider } from "./context/AuthContext";
 import "./index.css";
 
-// Find the root element
-const container = document.getElementById("root") as HTMLElement;
-
-// Create a root
-const root = createRoot(container);
-
-// Render the app
-root.render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <AuthProvider>
-      <App />
+      <AppRouter />
     </AuthProvider>
   </React.StrictMode>
 );

@@ -1,40 +1,42 @@
-import  { createContext, useState, useEffect} from "react";
-import type { ReactNode } from "react";
+import { createContext, useState, useEffect, type ReactNode } from "react";
 import type { User } from "../types/user";
+import api from "../api/api";
 
-interface AuthContextType {
+interface AuthContextProps {
   user: User | null;
   login: (user: User) => void;
   logout: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType>({
+export const AuthContext = createContext<AuthContextProps>({
   user: null,
   login: () => {},
   logout: () => {},
 });
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
+    const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const res = await api.get<User>("/users/me");
+          setUser(res.data);
+        } catch {
+          setUser(null);
+          localStorage.removeItem("token");
+        }
+      }
+    };
+    fetchUser();
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-  };
-
+  const login = (user: User) => setUser(user);
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
+    setUser(null);
   };
 
   return (

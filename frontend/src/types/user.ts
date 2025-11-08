@@ -3,4 +3,10 @@ export interface User {
   name: string;
   email: string;
   role: "admin" | "user";
+  avatar: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: User;
 }
