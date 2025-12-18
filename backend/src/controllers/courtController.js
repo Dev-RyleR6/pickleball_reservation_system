@@ -40,3 +40,15 @@ export async function updateCourtStatus(req, res, next) {
     next(err);
   }
 }
+
+export async function updateCourt(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { name, location } = req.body;
+    if (!name) return res.status(400).json({ error: "Name required" });
+    const court = await courtModel.updateCourt(id, { name, location: location || "" });
+    res.json({ court });
+  } catch (err) {
+    next(err);
+  }
+}

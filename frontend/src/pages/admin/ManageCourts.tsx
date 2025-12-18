@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Grid3X3, Plus, MapPin, AlertCircle, CheckCircle, Loader2, Edit2, Trash2, Power, PowerOff } from "lucide-react";
+import { Grid3X3, Plus, MapPin, AlertCircle, CheckCircle, Loader2, Edit2, Trash2, Power, PowerOff, XCircle } from "lucide-react";
 import AppLayout from "../../components/layout/AppLayout";
 import type { Court } from "../../types/court";
 import courtService from "../../api/courtService";
@@ -13,6 +13,7 @@ const ManageCourts: React.FC = () => {
   
   // Form state for adding/editing court
   const [showForm, setShowForm] = useState(false);
+  const [editingCourtId, setEditingCourtId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ name: "", location: "" });
   const [submitting, setSubmitting] = useState(false);
 
@@ -54,20 +55,44 @@ const ManageCourts: React.FC = () => {
     }
   };
 
-  const handleAddCourt = async (e: React.FormEvent) => {
+  const handleEditClick = (court: Court) => {
+    setEditingCourtId(court.id);
+    setFormData({ name: court.name, location: court.location || "" });
+    setShowForm(true);
+    setError("");
+    setSuccess("");
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingCourtId(null);
+    setFormData({ name: "", location: "" });
+  };
+
+  const handleSubmitCourt = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setSubmitting(true);
       setError("");
-      await courtService.addCourt(formData);
-      setSuccess("New court added successfully!");
+      
+      if (editingCourtId) {
+        await courtService.updateCourt(editingCourtId, formData);
+        setSuccess("Court updated successfully!");
+      } else {
+        await courtService.addCourt(formData);
+        setSuccess("New court added successfully!");
+      }
+      
       setFormData({ name: "", location: "" });
       setShowForm(false);
+      setEditingCourtId(null);
       await loadAllCourts();
       setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Failed to add new court.");
+      const errorMsg = err.response?.data?.error || err.message || (editingCourtId ? "Failed to update court." : "Failed to add new court.");
+      setError(errorMsg);
+      setTimeout(() => setError(""), 5000);
     } finally {
       setSubmitting(false);
     }
@@ -82,10 +107,18 @@ const ManageCourts: React.FC = () => {
             <p className="text-gray-600">Add, edit, or toggle availability of pickleball courts.</p>
           </div>
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm) {
+                handleCancelForm();
+              } else {
+                setShowForm(true);
+                setEditingCourtId(null);
+                setFormData({ name: "", location: "" });
+              }
+            }}
             className="flex items-center gap-2 bg-gray-800 text-white px-6 py-2.5 rounded-lg hover:bg-gray-900 transition-all font-semibold shadow-md active:scale-95"
           >
-            {showForm ? <Trash2 size={18} /> : <Plus size={18} />}
+            {showForm ? <XCircle size={18} /> : <Plus size={18} />}
             {showForm ? "Cancel" : "Add New Court"}
           </button>
         </div>
@@ -107,10 +140,10 @@ const ManageCourts: React.FC = () => {
         {showForm && (
           <div className="mb-8 bg-white border-2 border-gray-200 rounded-xl p-6 shadow-md animate-in zoom-in-95">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <Plus size={20} className="text-gray-700" />
-              Add New Court
+              {editingCourtId ? <Edit2 size={20} className="text-gray-700" /> : <Plus size={20} className="text-gray-700" />}
+              {editingCourtId ? "Edit Court" : "Add New Court"}
             </h2>
-            <form onSubmit={handleAddCourt} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmitCourt} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Court Name</label>
                 <input
@@ -119,7 +152,7 @@ const ManageCourts: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent outline-none transition-all bg-white text-gray-800 placeholder-gray-400"
                 />
               </div>
               <div>
@@ -129,17 +162,25 @@ const ManageCourts: React.FC = () => {
                   placeholder="e.g. Sector A, Floor 2"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent outline-none transition-all bg-white text-gray-800 placeholder-gray-400"
                 />
               </div>
-              <div className="md:col-span-2 flex justify-end">
+              <div className="md:col-span-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancelForm}
+                  disabled={submitting}
+                  className="border-2 border-gray-300 text-gray-700 px-8 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-all flex items-center gap-2 disabled:opacity-70"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="bg-gray-800 text-white px-8 py-2.5 rounded-lg font-bold hover:bg-gray-900 transition-all shadow-md flex items-center gap-2 disabled:opacity-70"
                 >
                   {submitting ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                  Create Court
+                  {editingCourtId ? "Update Court" : "Create Court"}
                 </button>
               </div>
             </form>
@@ -197,7 +238,11 @@ const ManageCourts: React.FC = () => {
                     )}
                     {court.status === 'available' ? 'Under Repair' : 'Set Available'}
                   </button>
-                  <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition-all">
+                  <button 
+                    onClick={() => handleEditClick(court)}
+                    disabled={processingId === court.id}
+                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50"
+                  >
                     <Edit2 size={16} />
                     Edit Info
                   </button>

@@ -11,7 +11,7 @@ const ManageReservations: React.FC = () => {
   const [success, setSuccess] = useState("");
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "cancelled">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "cancelled" | "expired">("all");
 
   const loadAllReservations = async () => {
     try {
@@ -70,7 +70,24 @@ const ManageReservations: React.FC = () => {
       (res.user_name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
       (res.status?.toLowerCase() || "").includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || res.status === statusFilter;
+    // Check if reservation is expired (by date/time or status)
+    const reservationDate = res.date ? new Date(res.date) : null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isExpired = res.status === 'expired' || (reservationDate && (
+      reservationDate < today || 
+      (reservationDate.getTime() === today.getTime() && res.end_time && 
+       new Date(`${res.date}T${res.end_time}`) < new Date())
+    ));
+    
+    let matchesStatus = true;
+    if (statusFilter !== "all") {
+      if (statusFilter === "expired") {
+        matchesStatus = isExpired;
+      } else {
+        matchesStatus = res.status === statusFilter && !isExpired;
+      }
+    }
     
     return matchesSearch && matchesStatus;
   });

@@ -23,3 +23,9 @@ export async function updateCourtStatus(id, status) {
   const court = await findCourtById(id);
   return court;
 }
+
+export async function updateCourt(id, { name, location }) {
+  await pool.query("UPDATE courts SET name = ?, location = ? WHERE id = ?", [name, location, id]);
+  const court = await findCourtById(id);
+  return court;
+}

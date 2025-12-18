@@ -66,6 +66,16 @@ const courtService = {
       throw err;
     }
   },
+
+  updateCourt: async (courtId: number, courtData: { name: string; location: string }): Promise<Court> => {
+    try {
+      const res = await api.put<{ court: Court }>(`/api/courts/${courtId}`, courtData);
+      return res.data.court;
+    } catch (err) {
+      console.error(`Failed to update court ${courtId}:`, err);
+      throw err;
+    }
+  },
 };
 
 export default courtService;
