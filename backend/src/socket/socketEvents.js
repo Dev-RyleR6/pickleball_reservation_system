@@ -62,3 +62,24 @@ export function emitCourtStatusChanged(court) {
   io.emit("court:status_changed", { court });
 }
 
+/**
+ * Emit user events (for admin user management)
+ */
+export function emitUserCreated(user) {
+  const io = getIO();
+  // Notify all admins about new user registrations
+  io.to("admin").emit("user:created", { user });
+}
+
+export function emitUserUpdated(user) {
+  const io = getIO();
+  // Notify all admins when user details/role change
+  io.to("admin").emit("user:updated", { user });
+}
+
+export function emitUserDeleted(userId) {
+  const io = getIO();
+  // Notify all admins when a user is deleted
+  io.to("admin").emit("user:deleted", { userId });
+}
+

@@ -1,6 +1,11 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import * as userModel from "../models/userModel.js";
+import {
+  emitUserCreated,
+  emitUserUpdated,
+  emitUserDeleted,
+} from "../socket/socketEvents.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 const SALT_ROUNDS = 10;
@@ -16,7 +21,11 @@ export async function register(req, res, next) {
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
     const user = await userModel.createUser({ name, email, passwordHash: hash, role:"player" });
 
-    res.status(201).json({ message: "User created", user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    const safeUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+    // Emit user created event (for admins)
+    emitUserCreated(safeUser);
+
+    res.status(201).json({ message: "User created", user: safeUser });
   } catch (err) { next(err); }
 }
 
@@ -57,6 +66,10 @@ export async function updateUserRole(req, res, next) {
     if (!user) return res.status(404).json({ error: "User not found" });
     
     const updated = await userModel.updateUserRole(id, role);
+
+    // Emit user updated event (for admins)
+    emitUserUpdated(updated);
+
     res.json({ user: updated });
   } catch (err) {
     next(err);
@@ -79,6 +92,10 @@ export async function deleteUser(req, res, next) {
     if (!user) return res.status(404).json({ error: "User not found" });
     
     await userModel.deleteUser(userId);
+
+    // Emit user deleted event (for admins)
+    emitUserDeleted(userId);
+
     res.json({ message: "User deleted successfully" });
   } catch (err) {
     next(err);

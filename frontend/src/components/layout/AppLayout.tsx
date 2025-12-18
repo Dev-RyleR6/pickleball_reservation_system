@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import NotificationBell from "../NotificationBell";
+import logo from "../../assets/main_logo.svg";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -42,8 +43,20 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     <div className="flex h-screen bg-gray-50 font-inter">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-800">Courtly</h1>
+        <div className="p-6 border-b border-gray-200 flex items-center gap-3">
+          <img
+            src={logo}
+            alt="Pickle World Reservation"
+            className="h-10 w-10 object-contain"
+          />
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-gray-500 tracking-wide uppercase">
+              Pickle World
+            </span>
+            <span className="text-lg font-bold text-gray-800 leading-tight">
+              Reservation
+            </span>
+          </div>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">

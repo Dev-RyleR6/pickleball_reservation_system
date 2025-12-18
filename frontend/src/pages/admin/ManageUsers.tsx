@@ -4,6 +4,7 @@ import AppLayout from "../../components/layout/AppLayout";
 import type { User as UserType } from "../../types/user";
 import { getAllUsers, updateUserRole, deleteUser } from "../../api/authService";
 import { useAuth } from "../../hooks/useAuth";
+import { useUserSocket } from "../../context/SocketContext";
 
 const ManageUsers: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -33,6 +34,29 @@ const ManageUsers: React.FC = () => {
   useEffect(() => {
     void loadUsers();
   }, []);
+
+  // Real-time socket listeners (admin only)
+  useUserSocket(
+    // onUserCreated
+    (user) => {
+      // Only admins should be on this page, but double-check
+      if (currentUser?.role === "admin") {
+        void loadUsers();
+      }
+    },
+    // onUserUpdated
+    (user) => {
+      if (currentUser?.role === "admin") {
+        void loadUsers();
+      }
+    },
+    // onUserDeleted
+    (userId) => {
+      if (currentUser?.role === "admin") {
+        void loadUsers();
+      }
+    }
+  );
 
   const handleRoleChange = async (userId: number, newRole: "admin" | "player") => {
     try {

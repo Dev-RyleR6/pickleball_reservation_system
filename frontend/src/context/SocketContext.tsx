@@ -3,6 +3,7 @@ import { io, Socket } from "socket.io-client";
 import { useAuth } from "../hooks/useAuth";
 import type { Reservation } from "../types/reservation";
 import type { Court } from "../types/court";
+import type { User } from "../types/user";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -171,5 +172,42 @@ export const useCourtSocket = (
       if (onCourtStatusChanged) socket.off("court:status_changed");
     };
   }, [socket, onCourtCreated, onCourtUpdated, onCourtDeleted, onCourtStatusChanged]);
+};
+
+// Hook for listening to user events (admin side)
+export const useUserSocket = (
+  onUserCreated?: (user: User) => void,
+  onUserUpdated?: (user: User) => void,
+  onUserDeleted?: (userId: number) => void
+) => {
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    if (onUserCreated) {
+      socket.on("user:created", (data: { user: User }) => {
+        onUserCreated(data.user);
+      });
+    }
+
+    if (onUserUpdated) {
+      socket.on("user:updated", (data: { user: User }) => {
+        onUserUpdated(data.user);
+      });
+    }
+
+    if (onUserDeleted) {
+      socket.on("user:deleted", (data: { userId: number }) => {
+        onUserDeleted(data.userId);
+      });
+    }
+
+    return () => {
+      if (onUserCreated) socket.off("user:created");
+      if (onUserUpdated) socket.off("user:updated");
+      if (onUserDeleted) socket.off("user:deleted");
+    };
+  }, [socket, onUserCreated, onUserUpdated, onUserDeleted]);
 };
 
