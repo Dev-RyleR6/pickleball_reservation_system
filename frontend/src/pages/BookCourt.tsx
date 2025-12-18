@@ -813,7 +813,7 @@ const BookCourt: React.FC = () => {
 
         {/* Success Modal */}
         {showSuccessModal && reservationDetails && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-in fade-in">
+          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
             <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95">
               <div className="text-center mb-6">
                 <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">

@@ -8,6 +8,7 @@ export const login = async (email: string, password: string): Promise<LoginRespo
     userData: res.data.user,
   };
   localStorage.setItem("user", JSON.stringify(authData));
+  localStorage.setItem("token", res.data.token); // Store token separately for the axios interceptor
   return authData;
 };
 
@@ -16,5 +17,6 @@ export const register = async (name: string, email: string, password: string) =>
 };
 
 export const logout = () => {
+  localStorage.removeItem("user");
   localStorage.removeItem("token");
 };

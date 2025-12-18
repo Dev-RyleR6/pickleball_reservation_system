@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { login } from "../api/authService";
@@ -6,23 +6,28 @@ import logo from "../assets/main_logo.svg";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login: setUser } = useAuth();
+  const { user, login: setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const res = await login(email, password);
       setUser(res.userData);
-      navigate("/");
     } catch (err: any) {
-        if(err.status === 401) {
+        if(err.response?.status === 401) {
             setError("Invalid Credentials");
             return;
         }
-        setError(err.response?.data?.message || "Login failed");
+        setError(err.response?.data?.message || err.response?.data?.error || "Login failed");
     }
   };
 
