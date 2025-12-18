@@ -76,6 +76,15 @@ const courtService = {
       throw err;
     }
   },
+
+  deleteCourt: async (courtId: number): Promise<void> => {
+    try {
+      await api.delete(`/api/courts/${courtId}`);
+    } catch (err) {
+      console.error(`Failed to delete court ${courtId}:`, err);
+      throw err;
+    }
+  },
 };
 
 export default courtService;

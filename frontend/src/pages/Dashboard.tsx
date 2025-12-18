@@ -19,7 +19,7 @@ const Dashboard: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-
+      
       // Fetch all courts
       const courts = await courtService.getAllCourts();
       setAllCourts(courts);
@@ -78,7 +78,7 @@ const Dashboard: React.FC = () => {
                       <Ticket size={24} className="text-gray-700" />
                     </div>
                   </div>
-                </div>
+        </div>
 
                 <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
                   <div className="flex items-center justify-between">
@@ -91,8 +91,8 @@ const Dashboard: React.FC = () => {
                     <div className="p-3 bg-gray-100 rounded-lg">
                       <Grid size={24} className="text-gray-700" />
                     </div>
-                  </div>
-                </div>
+        </div>
+          </div>
 
                 <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
                   <div className="flex items-center justify-between">
@@ -103,9 +103,9 @@ const Dashboard: React.FC = () => {
                     <div className="p-3 bg-gray-100 rounded-lg">
                       <CalendarDays size={24} className="text-gray-700" />
                     </div>
-                  </div>
                 </div>
-              </div>
+            </div>
+          </div>
 
               {/* Next reservation */}
               {currentReservation ? (
@@ -116,13 +116,13 @@ const Dashboard: React.FC = () => {
                   <div className="bg-white rounded-lg border border-gray-300 shadow-sm p-6">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gray-100 rounded-lg">
-                          <Ticket size={24} className="text-gray-700" />
-                        </div>
-                        <div>
+                      <div className="p-3 bg-gray-100 rounded-lg">
+                        <Ticket size={24} className="text-gray-700" />
+                      </div>
+                      <div>
                           <h3 className="text-lg font-semibold text-gray-800 mb-1">
                             {currentReservation.courtName || `Court ${currentReservation.courtId}`}
-                          </h3>
+                        </h3>
                           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                             <div className="flex items-center gap-1">
                               <CalendarDays size={16} />
@@ -133,14 +133,14 @@ const Dashboard: React.FC = () => {
                               <span>{currentReservation.time}</span>
                             </div>
                           </div>
-                        </div>
                       </div>
-                      <button
+                    </div>
+                    <button
                         className="w-full md:w-auto bg-white text-red-600 border border-red-300 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors font-medium"
                         onClick={() => cancelReservation(currentReservation.id as number)}
-                      >
-                        Cancel Reservation
-                      </button>
+                    >
+                      Cancel Reservation
+                    </button>
                     </div>
                   </div>
                 </div>
@@ -182,16 +182,16 @@ const Dashboard: React.FC = () => {
                   <p className="text-gray-500">No courts available at the moment.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {allCourts.map((court) => (
-                    <div
+                  <div
                       key={court.id}
                       className={`bg-white rounded-lg border p-6 flex flex-col transition-shadow hover:shadow-md ${
                         court.availableSlots && court.availableSlots.length > 0
-                          ? "border-gray-300"
-                          : "border-gray-200 opacity-75"
-                      }`}
-                    >
+                        ? "border-gray-300"
+                        : "border-gray-200 opacity-75"
+                    }`}
+                  >
                       <div className="flex items-start justify-between mb-4">
                         <div className="p-3 bg-gray-100 rounded-lg">
                           <CalendarDays size={24} className="text-gray-700" />
@@ -207,7 +207,7 @@ const Dashboard: React.FC = () => {
                         )}
                       </div>
                       
-                      <h3 className="text-lg font-semibold mb-2 text-gray-800">{court.name}</h3>
+                    <h3 className="text-lg font-semibold mb-2 text-gray-800">{court.name}</h3>
                       
                       {court.location && (
                         <div className="flex items-center gap-2 text-gray-500 text-sm mb-3">
@@ -217,13 +217,13 @@ const Dashboard: React.FC = () => {
                       )}
                       
                       <div className="flex items-center gap-2 text-gray-600 text-sm mb-4">
-                        <Clock size={16} />
-                        <span>
+                      <Clock size={16} />
+                      <span>
                           {court.availableSlots && court.availableSlots.length > 0
                             ? `${court.availableSlots.length} slot${court.availableSlots.length > 1 ? 's' : ''} available`
-                            : "No availability"}
-                        </span>
-                      </div>
+                          : "No availability"}
+                      </span>
+                    </div>
                       
                       {court.availableSlots && court.availableSlots.length > 0 && (
                         <div className="mb-4">
@@ -232,20 +232,20 @@ const Dashboard: React.FC = () => {
                         </div>
                       )}
                       
-                      <button
+                    <button
                         className={`mt-auto w-full py-2.5 rounded-lg transition-colors font-medium ${
                           court.availableSlots && court.availableSlots.length > 0
-                            ? "bg-gray-800 text-white hover:bg-gray-900"
-                            : "bg-gray-100 text-gray-500 cursor-not-allowed"
-                        }`}
+                          ? "bg-gray-800 text-white hover:bg-gray-900"
+                          : "bg-gray-100 text-gray-500 cursor-not-allowed"
+                      }`}
                         disabled={!court.availableSlots || court.availableSlots.length === 0}
                         onClick={() => navigate("/book")}
-                      >
+                    >
                         {court.availableSlots && court.availableSlots.length > 0 ? "Reserve Now" : "Unavailable"}
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                    </button>
+                  </div>
+                ))}
+              </div>
               )}
             </>
           )}

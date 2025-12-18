@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
-  LayoutDashboard, User, Settings, LogOut, ChevronDown, Bell, Ticket, Grid, Shield, Users
+  LayoutDashboard, User, Settings, LogOut, ChevronDown, Ticket, Grid, Shield, Users
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import NotificationBell from "../NotificationBell";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -141,7 +142,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           >
             <User size={20} /> Profile
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+          <button 
+            onClick={() => navigate("/settings")}
+            className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+              isActive("/settings") 
+                ? "bg-gray-100 text-gray-800 font-semibold" 
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
             <Settings size={20} /> Settings
           </button>
         </nav>
@@ -168,9 +176,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors">
-              <Bell size={20} />
-            </button>
+            <NotificationBell />
 
             <div className="relative">
               <button

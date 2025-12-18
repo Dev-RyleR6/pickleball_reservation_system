@@ -41,3 +41,19 @@ export async function deleteUser(id) {
   await pool.query("DELETE FROM users WHERE id = ?", [id]);
   return true;
 }
+
+export async function updateUserProfile(id, { name, email }) {
+  // Check if email is already taken by another user
+  const [existing] = await pool.query("SELECT id FROM users WHERE email = ? AND id != ?", [email, id]);
+  if (existing.length > 0) {
+    throw new Error("Email already in use");
+  }
+  
+  await pool.query("UPDATE users SET name = ?, email = ? WHERE id = ?", [name, email, id]);
+  return getUserById(id);
+}
+
+export async function updateUserPassword(id, passwordHash) {
+  await pool.query("UPDATE users SET password = ? WHERE id = ?", [passwordHash, id]);
+  return true;
+}

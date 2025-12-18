@@ -18,7 +18,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
-      try {
+        try {
         const parsed = JSON.parse(userData);
         if (parsed && parsed.userData) {
           return parsed.userData;
@@ -27,18 +27,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem("user");
         localStorage.removeItem("token");
         return null;
-      } catch {
+        } catch {
         localStorage.removeItem("user");
-        localStorage.removeItem("token");
+          localStorage.removeItem("token");
         return null;
+        }
       }
-    }
     return null;
   });
 
   const login = (userData: User) => {
     setUser(userData);
-  };
+    };
 
   const logout = () => {
     localStorage.removeItem("user");

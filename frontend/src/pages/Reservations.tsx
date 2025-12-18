@@ -4,9 +4,11 @@ import { CalendarDays, Clock, Plus, Ticket, MapPin, CheckCircle, AlertCircle, X,
 import AppLayout from "../components/layout/AppLayout";
 import type { Reservation } from "../types/reservation";
 import reservationService from "../api/reservationService";
+import { useNotifications } from "../context/NotificationContext";
 
 const Reservations: React.FC = () => {
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -16,18 +18,18 @@ const Reservations: React.FC = () => {
   const [cancelledReservation, setCancelledReservation] = useState<Reservation | null>(null);
 
   const loadReservations = async () => {
-    try {
+      try {
       setLoading(true);
       setError("");
       const data = await reservationService.getMyReservations();
       setReservations(data);
-    } catch (err) {
-      console.error(err);
+      } catch (err) {
+        console.error(err);
       setError("Failed to load reservations.");
     } finally {
       setLoading(false);
-    }
-  };
+      }
+    };
 
   useEffect(() => {
     void loadReservations();
@@ -51,6 +53,14 @@ const Reservations: React.FC = () => {
       // Store cancelled reservation details for success message
       if (reservation) {
         setCancelledReservation(reservation);
+        
+        // Add notification
+        addNotification({
+          type: "info",
+          title: "Reservation Cancelled",
+          message: `Your reservation for ${reservation.courtName || "court"} on ${new Date(reservation.date).toLocaleDateString()} at ${reservation.start_time} has been cancelled.`,
+          link: "/reservations",
+        });
       }
       
       setSuccess(`Reservation for ${reservation?.courtName || 'court'} on ${reservation?.date ? new Date(reservation.date).toLocaleDateString() : ''} has been cancelled.`);
@@ -97,7 +107,7 @@ const Reservations: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="p-8">
+    <div className="p-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 mb-2">My Reservations</h1>
@@ -170,7 +180,7 @@ const Reservations: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {reservations.map((resv) => (
+          {reservations.map((resv) => (
               <div
                 key={resv.id}
                 className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
@@ -289,8 +299,8 @@ const Reservations: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
-      </div>
+      )}
+    </div>
     </AppLayout>
   );
 };

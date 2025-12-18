@@ -3,13 +3,16 @@ import { Grid3X3, Plus, MapPin, AlertCircle, CheckCircle, Loader2, Edit2, Trash2
 import AppLayout from "../../components/layout/AppLayout";
 import type { Court } from "../../types/court";
 import courtService from "../../api/courtService";
+import { useNotifications } from "../../context/NotificationContext";
 
 const ManageCourts: React.FC = () => {
+  const { addNotification } = useNotifications();
   const [courts, setCourts] = useState<Court[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   
   // Form state for adding/editing court
   const [showForm, setShowForm] = useState(false);
@@ -41,7 +44,19 @@ const ManageCourts: React.FC = () => {
       setError("");
       setSuccess("");
       const newStatus = currentStatus === "available" ? "maintenance" : "available";
+      const court = courts.find(c => c.id === id);
       await courtService.updateCourtStatus(id, newStatus);
+      
+      // Add notification for all users
+      if (court) {
+        addNotification({
+          type: newStatus === "available" ? "success" : "warning",
+          title: `Court ${newStatus === "available" ? "Available" : "Under Maintenance"}`,
+          message: `${court.name} is now ${newStatus === "available" ? "available for bookings" : "under maintenance and unavailable"}.`,
+          link: "/courts",
+        });
+      }
+      
       setSuccess(`Court status updated to ${newStatus}.`);
       await loadAllCourts();
       setTimeout(() => setSuccess(""), 3000);
@@ -77,9 +92,21 @@ const ManageCourts: React.FC = () => {
       
       if (editingCourtId) {
         await courtService.updateCourt(editingCourtId, formData);
+        addNotification({
+          type: "info",
+          title: "Court Updated",
+          message: `Court "${formData.name}" has been updated.`,
+          link: "/courts",
+        });
         setSuccess("Court updated successfully!");
       } else {
         await courtService.addCourt(formData);
+        addNotification({
+          type: "success",
+          title: "New Court Added",
+          message: `A new court "${formData.name}" has been added and is now available for bookings.`,
+          link: "/courts",
+        });
         setSuccess("New court added successfully!");
       }
       
@@ -95,6 +122,38 @@ const ManageCourts: React.FC = () => {
       setTimeout(() => setError(""), 5000);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteCourt = async (id: number) => {
+    try {
+      setProcessingId(id);
+      setError("");
+      setSuccess("");
+      const court = courts.find(c => c.id === id);
+      await courtService.deleteCourt(id);
+      
+      // Add notification
+      if (court) {
+        addNotification({
+          type: "warning",
+          title: "Court Removed",
+          message: `Court "${court.name}" has been removed from the system.`,
+          link: "/courts",
+        });
+      }
+      
+      setSuccess("Court deleted successfully!");
+      setDeleteConfirmId(null);
+      await loadAllCourts();
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      console.error("Court delete error:", err);
+      const errorMsg = err.response?.data?.error || err.message || "Failed to delete court.";
+      setError(errorMsg);
+      setTimeout(() => setError(""), 5000);
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -223,29 +282,59 @@ const ManageCourts: React.FC = () => {
                   <span>{court.location || 'Facility Center'}</span>
                 </div>
 
-                <div className="mt-auto pt-6 border-t border-gray-100 grid grid-cols-2 gap-3">
-                  <button 
-                    disabled={processingId === court.id}
-                    onClick={() => handleStatusToggle(court.id, court.status || 'available')}
-                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-all ${
-                      court.status === 'available' 
-                        ? 'border-2 border-yellow-200 text-yellow-700 hover:bg-yellow-50' 
-                        : 'border-2 border-green-200 text-green-700 hover:bg-green-50'
-                    }`}
-                  >
-                    {processingId === court.id ? <Loader2 size={16} className="animate-spin" /> : (
-                      court.status === 'available' ? <PowerOff size={16} /> : <Power size={16} />
-                    )}
-                    {court.status === 'available' ? 'Under Repair' : 'Set Available'}
-                  </button>
-                  <button 
-                    onClick={() => handleEditClick(court)}
-                    disabled={processingId === court.id}
-                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50"
-                  >
-                    <Edit2 size={16} />
-                    Edit Info
-                  </button>
+                <div className="mt-auto pt-6 border-t border-gray-100 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <button 
+                      disabled={processingId === court.id}
+                      onClick={() => handleStatusToggle(court.id, court.status || 'available')}
+                      className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-all ${
+                        court.status === 'available' 
+                          ? 'border-2 border-yellow-200 text-yellow-700 hover:bg-yellow-50' 
+                          : 'border-2 border-green-200 text-green-700 hover:bg-green-50'
+                      } disabled:opacity-50`}
+                    >
+                      {processingId === court.id ? <Loader2 size={16} className="animate-spin" /> : (
+                        court.status === 'available' ? <PowerOff size={16} /> : <Power size={16} />
+                      )}
+                      {court.status === 'available' ? 'Under Repair' : 'Set Available'}
+                    </button>
+                    <button 
+                      onClick={() => handleEditClick(court)}
+                      disabled={processingId === court.id}
+                      className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50"
+                    >
+                      <Edit2 size={16} />
+                      Edit Info
+                    </button>
+                  </div>
+                  {deleteConfirmId === court.id ? (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDeleteCourt(court.id)}
+                        disabled={processingId === court.id}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold bg-red-600 text-white hover:bg-red-700 transition-all disabled:opacity-50"
+                      >
+                        {processingId === court.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                        Confirm Delete
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirmId(null)}
+                        disabled={processingId === court.id}
+                        className="flex-1 px-3 py-2 rounded-lg text-sm font-bold border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => setDeleteConfirmId(court.id)}
+                      disabled={processingId === court.id}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-bold border-2 border-red-200 text-red-700 hover:bg-red-50 transition-all disabled:opacity-50"
+                    >
+                      <Trash2 size={16} />
+                      Delete Court
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

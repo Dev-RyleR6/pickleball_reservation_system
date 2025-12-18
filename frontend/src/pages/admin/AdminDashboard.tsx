@@ -8,7 +8,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="p-8">
+    <div className="p-8">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-gray-100 rounded-lg">
@@ -71,8 +71,8 @@ const AdminDashboard: React.FC = () => {
             </div>
             <p className="text-sm text-gray-600">Switch back to the standard player dashboard.</p>
           </button>
-        </div>
       </div>
+    </div>
     </AppLayout>
   );
 };

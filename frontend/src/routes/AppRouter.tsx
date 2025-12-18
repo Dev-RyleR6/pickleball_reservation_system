@@ -10,6 +10,8 @@ import ManageReservations from "../pages/admin/ManageReservations";
 import ManageCourts from "../pages/admin/ManageCourts";
 import ManageUsers from "../pages/admin/ManageUsers";
 import BookCourt from "../pages/BookCourt";
+import Profile from "../pages/Profile";
+import Settings from "../pages/Settings";
 import { useAuth } from "../hooks/useAuth";
 
 // ProtectedRoute
@@ -90,6 +92,22 @@ const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute adminOnly>
               <ManageUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           }
         />

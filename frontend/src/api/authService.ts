@@ -49,3 +49,22 @@ export const deleteUser = async (userId: number): Promise<void> => {
     throw err;
   }
 };
+
+export const updateProfile = async (userId: number, profileData: { name: string; email: string }): Promise<User> => {
+  try {
+    const res = await api.put<{ user: User }>(`/auth/users/${userId}/profile`, profileData);
+    return res.data.user;
+  } catch (err) {
+    console.error(`Failed to update profile for user ${userId}:`, err);
+    throw err;
+  }
+};
+
+export const changePassword = async (userId: number, passwordData: { currentPassword: string; newPassword: string }): Promise<void> => {
+  try {
+    await api.put(`/auth/users/${userId}/password`, passwordData);
+  } catch (err) {
+    console.error(`Failed to change password for user ${userId}:`, err);
+    throw err;
+  }
+};

@@ -3,8 +3,10 @@ import { CalendarDays, Clock, Ticket, CheckCircle, XCircle, AlertCircle, Loader2
 import AppLayout from "../../components/layout/AppLayout";
 import type { Reservation } from "../../types/reservation";
 import reservationService from "../../api/reservationService";
+import { useNotifications } from "../../context/NotificationContext";
 
 const ManageReservations: React.FC = () => {
+  const { addNotification } = useNotifications();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,6 +40,18 @@ const ManageReservations: React.FC = () => {
       setSuccess("");
       
       const result = await reservationService.updateReservationAction(id, action);
+      const reservation = reservations.find(r => r.id === id);
+      
+      // Add notification for the user
+      if (reservation) {
+        addNotification({
+          type: action === "approve" ? "success" : "warning",
+          title: action === "approve" ? "Reservation Approved" : "Reservation Rejected",
+          message: `Your reservation for ${reservation.courtName || "court"} on ${new Date(reservation.date).toLocaleDateString()} at ${reservation.start_time} has been ${action === "approve" ? "approved" : "rejected"}.`,
+          link: "/reservations",
+        });
+      }
+      
       setSuccess(`Reservation successfully ${action === 'approve' ? 'approved' : 'rejected'}.`);
       
       // Reload to get updated statuses

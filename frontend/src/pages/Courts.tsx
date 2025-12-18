@@ -27,7 +27,7 @@ const Courts: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="p-8">
+    <div className="p-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Available Courts</h1>
@@ -52,7 +52,7 @@ const Courts: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courts.map((court) => (
+        {courts.map((court) => (
               <div
                 key={court.id}
                 className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
@@ -105,10 +105,10 @@ const Courts: React.FC = () => {
                   {court.availableSlots && court.availableSlots.length > 0 ? "Book Now" : "Unavailable"}
                 </button>
               </div>
-            ))}
+        ))}
           </div>
         )}
-      </div>
+    </div>
     </AppLayout>
   );
 };

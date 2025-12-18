@@ -52,3 +52,19 @@ export async function updateCourt(req, res, next) {
     next(err);
   }
 }
+
+export async function deleteCourt(req, res, next) {
+  try {
+    const { id } = req.params;
+    const court = await courtModel.findCourtById(id);
+    if (!court) return res.status(404).json({ error: "Court not found" });
+    
+    await courtModel.deleteCourt(id);
+    res.json({ message: "Court deleted successfully" });
+  } catch (err) {
+    if (err.message && err.message.includes("existing reservations")) {
+      return res.status(400).json({ error: err.message });
+    }
+    next(err);
+  }
+}

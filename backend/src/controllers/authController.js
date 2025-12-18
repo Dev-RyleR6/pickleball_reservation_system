@@ -84,3 +84,68 @@ export async function deleteUser(req, res, next) {
     next(err);
   }
 }
+
+export async function updateProfile(req, res, next) {
+  try {
+    const { id } = req.params;
+    const userId = parseInt(id);
+    const { name, email } = req.body;
+    
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
+    
+    // Users can only update their own profile, unless they're admin
+    // Compare as numbers to handle both string and number IDs
+    const currentUserId = typeof req.user.id === 'string' ? parseInt(req.user.id) : req.user.id;
+    if (userId !== currentUserId && req.user.role !== "admin") {
+      return res.status(403).json({ error: "You can only update your own profile" });
+    }
+    
+    if (!name || !email) return res.status(400).json({ error: "Name and email are required" });
+    
+    const updated = await userModel.updateUserProfile(userId, { name, email });
+    res.json({ user: updated });
+  } catch (err) {
+    if (err.message && err.message.includes("Email already in use")) {
+      return res.status(400).json({ error: err.message });
+    }
+    next(err);
+  }
+}
+
+export async function changePassword(req, res, next) {
+  try {
+    const { id } = req.params;
+    const userId = parseInt(id);
+    const { currentPassword, newPassword } = req.body;
+    
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
+    
+    // Users can only change their own password
+    // Compare as numbers to handle both string and number IDs
+    const currentUserId = typeof req.user.id === 'string' ? parseInt(req.user.id) : req.user.id;
+    if (userId !== currentUserId) {
+      return res.status(403).json({ error: "You can only change your own password" });
+    }
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Current password and new password are required" });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "New password must be at least 6 characters" });
+    }
+    
+    const user = await userModel.getUserByEmail(req.user.email);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) return res.status(401).json({ error: "Current password is incorrect" });
+    
+    const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await userModel.updateUserPassword(userId, hash);
+    
+    res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    next(err);
+  }
+}

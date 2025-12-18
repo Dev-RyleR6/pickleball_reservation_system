@@ -5,9 +5,11 @@ import AppLayout from "../components/layout/AppLayout";
 import courtService from "../api/courtService";
 import type { Court } from "../types/court";
 import reservationService from "../api/reservationService";
+import { useNotifications } from "../context/NotificationContext";
 
 const BookCourt: React.FC = () => {
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
   const [courts, setCourts] = useState<Court[]>([]);
   const [courtId, setCourtId] = useState<string>("");
   const [date, setDate] = useState("");
@@ -242,6 +244,14 @@ const BookCourt: React.FC = () => {
       });
       
       await reservationService.createReservation(courtId, date, time, duration);
+      
+      // Add notification
+      addNotification({
+        type: "success",
+        title: "Reservation Created",
+        message: `Your reservation for ${selectedCourt?.name} on ${new Date(date).toLocaleDateString()} at ${time} has been created successfully.`,
+        link: "/reservations",
+      });
       
       // Show success modal
       setShowSuccessModal(true);
