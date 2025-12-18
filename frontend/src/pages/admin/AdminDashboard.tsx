@@ -1,31 +1,66 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Grid3X3, CalendarDays, ArrowLeft, Shield } from "lucide-react";
+import AppLayout from "../../components/layout/AppLayout";
 
 const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link
-          to="/courts"
-          className="p-4 bg-blue-500 text-white rounded shadow hover:bg-blue-600"
-        >
-          Manage Courts
-        </Link>
-        <Link
-          to="/reservations"
-          className="p-4 bg-green-500 text-white rounded shadow hover:bg-green-600"
-        >
-          Manage Reservations
-        </Link>
-        <Link
-          to="/"
-          className="p-4 bg-gray-500 text-white rounded shadow hover:bg-gray-600"
-        >
-          Go to User Dashboard
-        </Link>
+    <AppLayout>
+      <div className="p-8">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Shield size={24} className="text-gray-700" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+          </div>
+          <p className="text-gray-600">Manage courts and reservations across the facility.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <button
+            onClick={() => navigate("/courts")}
+            className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow text-left group"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors">
+                <Grid3X3 size={20} className="text-gray-700" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800">Manage Courts</h2>
+            </div>
+            <p className="text-sm text-gray-600">View and manage all courts and their availability.</p>
+          </button>
+
+          <button
+            onClick={() => navigate("/reservations")}
+            className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow text-left group"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors">
+                <CalendarDays size={20} className="text-gray-700" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800">Manage Reservations</h2>
+            </div>
+            <p className="text-sm text-gray-600">Review and manage all reservations in the system.</p>
+          </button>
+
+          <button
+            onClick={() => navigate("/")}
+            className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow text-left group"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors">
+                <ArrowLeft size={20} className="text-gray-700" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800">User Dashboard</h2>
+            </div>
+            <p className="text-sm text-gray-600">Switch back to the standard player dashboard.</p>
+          </button>
+        </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

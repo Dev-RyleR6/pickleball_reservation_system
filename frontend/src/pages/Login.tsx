@@ -15,7 +15,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     try {
       const res = await login(email, password);
-      setUser(res.user);
+      setUser(res.userData);
       navigate("/");
     } catch (err: any) {
         if(err.status === 401) {
@@ -49,7 +49,7 @@ const Login: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
               required
             />
           </div>
@@ -63,13 +63,13 @@ const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="********"
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
               required
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-gray-900 transition-colors"
           >
             Login
           </button>
@@ -77,7 +77,7 @@ const Login: React.FC = () => {
         <p className="mt-6 text-center text-gray-600">
           Don’t have an account?{" "}
           <span
-            className="text-blue-600 hover:underline cursor-pointer"
+            className="text-gray-800 hover:underline cursor-pointer font-medium"
             onClick={() => navigate("/register")}
           >
             Register

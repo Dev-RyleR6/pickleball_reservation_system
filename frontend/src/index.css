@@ -71,3 +71,32 @@ button:focus-visible {
 html, body, #root {
   @apply h-full m-0 p-0;
 }
+
+/* Improve visibility of date and time inputs */
+input[type="date"],
+input[type="time"] {
+  color-scheme: light;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  filter: invert(0.3);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Ensure select dropdown text is visible */
+select {
+  color: #111827;
+}
+
+select option {
+  color: #111827;
+  background-color: white;
+  padding: 8px;
+}

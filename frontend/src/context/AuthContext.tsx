@@ -19,14 +19,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem("token");
-      if (token) {
+      const userData = localStorage.getItem("user");
+      if (userData) {
         try {
-          const res = await api.get<User>("/users/me");
-          setUser(res.data);
+          const parsed = JSON.parse(userData);
+          setUser(parsed.userData);
         } catch {
           setUser(null);
-          localStorage.removeItem("token");
+          localStorage.removeItem("user");
         }
       }
     };
@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = (user: User) => setUser(user);
   const logout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 

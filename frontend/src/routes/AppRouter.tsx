@@ -6,6 +6,7 @@ import Dashboard from "../pages/Dashboard";
 import Courts from "../pages/Courts";
 import Reservations from "../pages/Reservations";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+import BookCourt from "../pages/BookCourt";
 import { useAuth } from "../hooks/useAuth";
 
 // ProtectedRoute
@@ -25,10 +26,46 @@ const AppRouter: React.FC = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/courts" element={<ProtectedRoute><Courts /></ProtectedRoute>} />
-        <Route path="/reservations" element={<ProtectedRoute><Reservations /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/courts"
+          element={
+            <ProtectedRoute>
+              <Courts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reservations"
+          element={
+            <ProtectedRoute>
+              <Reservations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/book"
+          element={
+            <ProtectedRoute>
+              <BookCourt />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute adminOnly>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
