@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CalendarDays, MapPin, Clock, Plus } from "lucide-react";
 import AppLayout from "../components/layout/AppLayout";
 import type { Court } from "../types/court";
-import api from "../api/api";
+import courtService from "../api/courtService";
 
 const Courts: React.FC = () => {
   const navigate = useNavigate();
@@ -14,8 +14,8 @@ const Courts: React.FC = () => {
     const fetchCourts = async () => {
       try {
         setLoading(true);
-        const res = await api.get<{ courts: Court[] }>("/api/courts");
-        setCourts(res.data.courts || []);
+        const data = await courtService.getAllCourts();
+        setCourts(data);
       } catch (err) {
         console.error(err);
       } finally {

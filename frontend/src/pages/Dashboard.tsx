@@ -28,8 +28,14 @@ const Dashboard: React.FC = () => {
       const reservations = await reservationService.getMyReservations();
       setAllReservations(reservations);
 
-      // Set current user's next reservation (first upcoming)
-      setCurrentReservation(reservations.length > 0 ? reservations[0] : null);
+      // Set current user's next upcoming reservation (first future reservation)
+      const upcoming = reservations.find(r => {
+        const resDate = r.date ? new Date(r.date) : null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return resDate && resDate >= today && r.status !== 'cancelled' && r.status !== 'expired';
+      });
+      setCurrentReservation(upcoming || null);
 
     } catch (err) {
       console.error("Failed to fetch dashboard data", err);
@@ -190,9 +196,13 @@ const Dashboard: React.FC = () => {
                         <div className="p-3 bg-gray-100 rounded-lg">
                           <CalendarDays size={24} className="text-gray-700" />
                         </div>
-                        {court.availableSlots && court.availableSlots.length > 0 && (
+                        {court.availableSlots && court.availableSlots.length > 0 ? (
                           <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded">
                             Available
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded">
+                            {court.status === 'maintenance' ? 'Maintenance' : 'Unavailable'}
                           </span>
                         )}
                       </div>

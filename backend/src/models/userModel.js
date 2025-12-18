@@ -22,3 +22,22 @@ export async function getAllUsers() {
   const [rows] = await pool.query("SELECT id, name, email, role FROM users");
   return rows;
 }
+
+export async function updateUserRole(id, role) {
+  await pool.query("UPDATE users SET role = ? WHERE id = ?", [role, id]);
+  return getUserById(id);
+}
+
+export async function deleteUser(id) {
+  // First check if user has any reservations
+  const [reservations] = await pool.query("SELECT COUNT(*) as count FROM reservations WHERE user_id = ?", [id]);
+  
+  if (reservations[0].count > 0) {
+    // Cancel all user's reservations first
+    await pool.query("UPDATE reservations SET status = 'cancelled' WHERE user_id = ?", [id]);
+  }
+  
+  // Delete the user
+  await pool.query("DELETE FROM users WHERE id = ?", [id]);
+  return true;
+}

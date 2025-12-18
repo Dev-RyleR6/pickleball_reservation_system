@@ -5,10 +5,27 @@ const reservationService = {
   // Admin: get all reservations
   getAllReservations: async (): Promise<Reservation[]> => {
     try {
-      const res = await api.get<Reservation[]>("/api/reservations");
-      return res.data;
+      const res = await api.get<{ reservations: Reservation[] }>("/api/reservations");
+      const reservations = res.data.reservations || [];
+      return reservations.map((r) => ({
+        ...r,
+        courtName: r.court_name,
+        courtId: String(r.court_id),
+        time: `${r.start_time} - ${r.end_time}`,
+      }));
     } catch (err) {
       console.error("Failed to fetch reservations:", err);
+      throw err;
+    }
+  },
+
+  // Admin: approve or reject a reservation
+  updateReservationAction: async (id: number, action: "approve" | "reject"): Promise<Reservation> => {
+    try {
+      const res = await api.post<{ reservation: Reservation }>(`/api/reservations/${id}/action`, { action });
+      return res.data.reservation;
+    } catch (err) {
+      console.error(`Failed to ${action} reservation ${id}:`, err);
       throw err;
     }
   },

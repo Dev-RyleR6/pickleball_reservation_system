@@ -1,7 +1,7 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
-  LayoutDashboard, User, Settings, LogOut, ChevronDown, Bell, Ticket, Grid, Shield
+  LayoutDashboard, User, Settings, LogOut, ChevronDown, Bell, Ticket, Grid, Shield, Users
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -87,16 +87,49 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <Grid size={20} /> Book a Court
           </button>
           {user.role === "admin" && (
-            <button 
-              onClick={() => navigate("/admin")}
-              className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                isActive("/admin") 
-                  ? "bg-gray-100 text-gray-800 font-semibold" 
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              <Shield size={20} /> Admin
-            </button>
+            <div className="pt-4 mt-4 border-t border-gray-100">
+              <p className="px-4 mb-2 text-xs font-bold text-gray-400 uppercase tracking-widest">Admin Tools</p>
+              <button 
+                onClick={() => navigate("/admin")}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                  isActive("/admin") 
+                    ? "bg-gray-800 text-white font-semibold" 
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <Shield size={20} /> Admin Dashboard
+              </button>
+              <button 
+                onClick={() => navigate("/admin/courts")}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                  isActive("/admin/courts") 
+                    ? "bg-gray-800 text-white font-semibold" 
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <Grid size={20} /> Manage Courts
+              </button>
+              <button 
+                onClick={() => navigate("/admin/reservations")}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                  isActive("/admin/reservations") 
+                    ? "bg-gray-800 text-white font-semibold" 
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <Ticket size={20} /> Manage Bookings
+              </button>
+              <button 
+                onClick={() => navigate("/admin/users")}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                  isActive("/admin/users") 
+                    ? "bg-gray-800 text-white font-semibold" 
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <Users size={20} /> Facility Users
+              </button>
+            </div>
           )}
           <button
             onClick={() => navigate("/profile")}

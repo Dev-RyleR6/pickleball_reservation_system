@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CalendarDays, Clock, MapPin, CheckCircle, AlertCircle, Info, Sparkles, X, Timer, Loader2 } from "lucide-react";
 import AppLayout from "../components/layout/AppLayout";
-import api from "../api/api";
+import courtService from "../api/courtService";
 import type { Court } from "../types/court";
 import reservationService from "../api/reservationService";
 
@@ -168,11 +168,10 @@ const BookCourt: React.FC = () => {
       try {
         setLoading(true);
         setError("");
-        const res = await api.get<{ courts: Court[] }>("/api/courts");
-        const courtsList = res.data.courts || [];
-        setCourts(courtsList);
-        if (courtsList.length > 0) {
-          setCourtId(String(courtsList[0].id));
+        const data = await courtService.getAllCourts();
+        setCourts(data);
+        if (data.length > 0) {
+          setCourtId(String(data[0].id));
         }
       } catch (err) {
         console.error(err);

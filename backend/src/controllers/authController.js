@@ -46,3 +46,41 @@ export async function getAllUsers(req, res, next) {
     next(err);
   }
 }
+
+export async function updateUserRole(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!["admin", "player"].includes(role)) return res.status(400).json({ error: "Invalid role" });
+    
+    const user = await userModel.getUserById(id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    
+    const updated = await userModel.updateUserRole(id, role);
+    res.json({ user: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteUser(req, res, next) {
+  try {
+    const { id } = req.params;
+    const userId = parseInt(id);
+    
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
+    
+    // Prevent deleting yourself
+    if (userId === req.user.id) {
+      return res.status(400).json({ error: "You cannot delete your own account" });
+    }
+    
+    const user = await userModel.getUserById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    
+    await userModel.deleteUser(userId);
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+}

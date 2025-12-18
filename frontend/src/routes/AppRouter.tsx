@@ -6,6 +6,9 @@ import Dashboard from "../pages/Dashboard";
 import Courts from "../pages/Courts";
 import Reservations from "../pages/Reservations";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+import ManageReservations from "../pages/admin/ManageReservations";
+import ManageCourts from "../pages/admin/ManageCourts";
+import ManageUsers from "../pages/admin/ManageUsers";
 import BookCourt from "../pages/BookCourt";
 import { useAuth } from "../hooks/useAuth";
 
@@ -63,6 +66,30 @@ const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute adminOnly>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reservations"
+          element={
+            <ProtectedRoute adminOnly>
+              <ManageReservations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courts"
+          element={
+            <ProtectedRoute adminOnly>
+              <ManageCourts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute adminOnly>
+              <ManageUsers />
             </ProtectedRoute>
           }
         />
