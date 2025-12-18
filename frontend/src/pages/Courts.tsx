@@ -4,6 +4,7 @@ import { CalendarDays, MapPin, Clock, Plus } from "lucide-react";
 import AppLayout from "../components/layout/AppLayout";
 import type { Court } from "../types/court";
 import courtService from "../api/courtService";
+import { useCourtSocket } from "../context/SocketContext";
 
 const Courts: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,26 @@ const Courts: React.FC = () => {
     };
     void fetchCourts();
   }, []);
+
+  // Real-time socket listeners for court changes
+  useCourtSocket(
+    // onCourtCreated
+    () => {
+      void courtService.getAllCourts().then(setCourts);
+    },
+    // onCourtUpdated
+    () => {
+      void courtService.getAllCourts().then(setCourts);
+    },
+    // onCourtDeleted
+    () => {
+      void courtService.getAllCourts().then(setCourts);
+    },
+    // onCourtStatusChanged
+    () => {
+      void courtService.getAllCourts().then(setCourts);
+    }
+  );
 
   return (
     <AppLayout>
@@ -55,20 +76,35 @@ const Courts: React.FC = () => {
         {courts.map((court) => (
               <div
                 key={court.id}
-                className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 bg-gray-100 rounded-lg">
-                    <CalendarDays size={24} className="text-gray-700" />
+                {court.image && (
+                  <div className="w-full h-48 overflow-hidden">
+                    <img 
+                      src={court.image.startsWith('http') ? court.image : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}${court.image}`}
+                      alt={court.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
-                  {court.availableSlots && court.availableSlots.length > 0 && (
-                    <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded">
-                      Available
-                    </span>
-                  )}
-                </div>
-                
-                <h2 className="text-lg font-semibold mb-2 text-gray-800">{court.name}</h2>
+                )}
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    {!court.image && (
+                      <div className="p-3 bg-gray-100 rounded-lg">
+                        <CalendarDays size={24} className="text-gray-700" />
+                      </div>
+                    )}
+                    {court.availableSlots && court.availableSlots.length > 0 && (
+                      <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded">
+                        Available
+                      </span>
+                    )}
+                  </div>
+                  
+                  <h2 className="text-lg font-semibold mb-2 text-gray-800">{court.name}</h2>
                 
                 {court.location && (
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-3">
@@ -104,6 +140,7 @@ const Courts: React.FC = () => {
                 >
                   {court.availableSlots && court.availableSlots.length > 0 ? "Book Now" : "Unavailable"}
                 </button>
+                </div>
               </div>
         ))}
           </div>

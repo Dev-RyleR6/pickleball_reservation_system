@@ -4,6 +4,7 @@ import AppLayout from "../../components/layout/AppLayout";
 import type { Reservation } from "../../types/reservation";
 import reservationService from "../../api/reservationService";
 import { useNotifications } from "../../context/NotificationContext";
+import { useReservationSocket } from "../../context/SocketContext";
 
 const ManageReservations: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -32,6 +33,26 @@ const ManageReservations: React.FC = () => {
   useEffect(() => {
     void loadAllReservations();
   }, []);
+
+  // Real-time socket listeners for admin
+  useReservationSocket(
+    // onReservationCreated - admin sees all new reservations
+    (reservation) => {
+      void loadAllReservations();
+    },
+    // onReservationUpdated
+    (reservation) => {
+      void loadAllReservations();
+    },
+    // onReservationApproved
+    (reservation) => {
+      void loadAllReservations();
+    },
+    // onReservationCancelled
+    (reservation) => {
+      void loadAllReservations();
+    }
+  );
 
   const handleAction = async (id: number, action: "approve" | "reject") => {
     try {

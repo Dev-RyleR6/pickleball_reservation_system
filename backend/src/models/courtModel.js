@@ -10,12 +10,12 @@ export async function findCourtById(id) {
   return rows[0];
 }
 
-export async function createCourt({ name, location, status = "available" }) {
+export async function createCourt({ name, location, status = "available", image = null }) {
   const [res] = await pool.query(
-    "INSERT INTO courts (name, location, status) VALUES (?, ?, ?)",
-    [name, location, status]
+    "INSERT INTO courts (name, location, status, image) VALUES (?, ?, ?, ?)",
+    [name, location, status, image]
   );
-  return { id: res.insertId, name, location, status };
+  return { id: res.insertId, name, location, status, image };
 }
 
 export async function updateCourtStatus(id, status) {
@@ -24,8 +24,12 @@ export async function updateCourtStatus(id, status) {
   return court;
 }
 
-export async function updateCourt(id, { name, location }) {
-  await pool.query("UPDATE courts SET name = ?, location = ? WHERE id = ?", [name, location, id]);
+export async function updateCourt(id, { name, location, image }) {
+  if (image !== undefined) {
+    await pool.query("UPDATE courts SET name = ?, location = ?, image = ? WHERE id = ?", [name, location, image, id]);
+  } else {
+    await pool.query("UPDATE courts SET name = ?, location = ? WHERE id = ?", [name, location, id]);
+  }
   const court = await findCourtById(id);
   return court;
 }

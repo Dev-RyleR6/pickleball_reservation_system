@@ -47,9 +47,20 @@ const courtService = {
     }
   },
 
-  addCourt: async (courtData: { name: string; location: string }): Promise<Court> => {
+  addCourt: async (courtData: { name: string; location: string; image?: string }): Promise<Court> => {
     try {
       const res = await api.post<{ court: Court }>("/api/courts", courtData);
+      return res.data.court;
+    } catch (err) {
+      console.error("Failed to add court:", err);
+      throw err;
+    }
+  },
+
+  addCourtWithImage: async (formData: FormData): Promise<Court> => {
+    try {
+      // Don't set Content-Type header - let axios set it automatically with boundary
+      const res = await api.post<{ court: Court }>("/api/courts", formData);
       return res.data.court;
     } catch (err) {
       console.error("Failed to add court:", err);
@@ -67,9 +78,20 @@ const courtService = {
     }
   },
 
-  updateCourt: async (courtId: number, courtData: { name: string; location: string }): Promise<Court> => {
+  updateCourt: async (courtId: number, courtData: { name: string; location: string; image?: string }): Promise<Court> => {
     try {
       const res = await api.put<{ court: Court }>(`/api/courts/${courtId}`, courtData);
+      return res.data.court;
+    } catch (err) {
+      console.error(`Failed to update court ${courtId}:`, err);
+      throw err;
+    }
+  },
+
+  updateCourtWithImage: async (courtId: number, formData: FormData): Promise<Court> => {
+    try {
+      // Don't set Content-Type header - let axios set it automatically with boundary
+      const res = await api.put<{ court: Court }>(`/api/courts/${courtId}`, formData);
       return res.data.court;
     } catch (err) {
       console.error(`Failed to update court ${courtId}:`, err);

@@ -3,13 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { CalendarDays, Clock, Plus, Ticket, MapPin, CheckCircle, AlertCircle, X, Loader2 } from "lucide-react";
 import AppLayout from "../components/layout/AppLayout";
 import type { Reservation } from "../types/reservation";
+import type { Court } from "../types/court";
 import reservationService from "../api/reservationService";
+import courtService from "../api/courtService";
 import { useNotifications } from "../context/NotificationContext";
+import { useReservationSocket } from "../context/SocketContext";
+import { useAuth } from "../hooks/useAuth";
 
 const Reservations: React.FC = () => {
   const navigate = useNavigate();
   const { addNotification } = useNotifications();
+  const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [courts, setCourts] = useState<Court[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -21,8 +27,12 @@ const Reservations: React.FC = () => {
       try {
       setLoading(true);
       setError("");
-      const data = await reservationService.getMyReservations();
-      setReservations(data);
+      const [reservationsData, courtsData] = await Promise.all([
+        reservationService.getMyReservations(),
+        courtService.getAllCourts()
+      ]);
+      setReservations(reservationsData);
+      setCourts(courtsData);
       } catch (err) {
         console.error(err);
       setError("Failed to load reservations.");
@@ -34,6 +44,46 @@ const Reservations: React.FC = () => {
   useEffect(() => {
     void loadReservations();
   }, []);
+
+  // Real-time socket listeners
+  useReservationSocket(
+    // onReservationCreated - only update if it's for current user
+    (reservation) => {
+      if (reservation.user_id === user?.id) {
+        addNotification({
+          type: "success",
+          title: "New Reservation Created",
+          message: `Your reservation for ${reservation.court_name || "court"} on ${new Date(reservation.date).toLocaleDateString()} has been created.`,
+          link: "/reservations",
+        });
+        void loadReservations();
+      }
+    },
+    // onReservationUpdated
+    (reservation) => {
+      if (reservation.user_id === user?.id) {
+        void loadReservations();
+      }
+    },
+    // onReservationApproved
+    (reservation) => {
+      if (reservation.user_id === user?.id) {
+        addNotification({
+          type: "success",
+          title: "Reservation Approved",
+          message: `Your reservation for ${reservation.court_name || "court"} on ${new Date(reservation.date).toLocaleDateString()} has been approved!`,
+          link: "/reservations",
+        });
+        void loadReservations();
+      }
+    },
+    // onReservationCancelled
+    (reservation) => {
+      if (reservation.user_id === user?.id) {
+        void loadReservations();
+      }
+    }
+  );
 
   const handleCancelClick = (reservation: Reservation) => {
     setShowCancelConfirm(reservation.id);
@@ -180,61 +230,101 @@ const Reservations: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-          {reservations.map((resv) => (
+          {reservations.map((resv) => {
+            const reservationCourt = courts.find(c => c.id === resv.court_id);
+            
+            // Check if reservation is expired
+            const reservationDate = resv.date ? new Date(resv.date) : null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const isExpired = resv.status === 'expired' || (reservationDate && (
+              reservationDate < today || 
+              (reservationDate.getTime() === today.getTime() && resv.end_time && 
+               new Date(`${resv.date}T${resv.end_time}`) < new Date())
+            ));
+            
+            // Determine if cancel button should be shown
+            const canCancel = !isExpired && resv.status !== 'cancelled' && resv.status !== 'expired';
+            
+            return (
               <div
                 key={resv.id}
-                className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-gray-100 rounded-lg">
-                      <Ticket size={24} className="text-gray-700" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                        {resv.courtName || `Court ${resv.courtId}`}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <CalendarDays size={16} />
-                          <span>{new Date(resv.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                {reservationCourt?.image && (
+                  <div className="w-full h-48 overflow-hidden">
+                    <img 
+                      src={reservationCourt.image.startsWith('http') ? reservationCourt.image : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}${reservationCourt.image}`}
+                      alt={resv.courtName || `Court ${resv.courtId}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      {!reservationCourt?.image && (
+                        <div className="p-3 bg-gray-100 rounded-lg">
+                          <Ticket size={24} className="text-gray-700" />
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Clock size={16} />
-                          <span>{resv.time}</span>
+                      )}
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                          {resv.courtName || `Court ${resv.courtId}`}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <CalendarDays size={16} />
+                            <span>{new Date(resv.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock size={16} />
+                            <span>{resv.time}</span>
+                          </div>
+                          {resv.status && (
+                            <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                              resv.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              resv.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              resv.status === 'expired' ? 'bg-orange-100 text-orange-700' :
+                              resv.status === 'cancelled' ? 'bg-gray-100 text-gray-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {isExpired ? 'Expired' : resv.status.charAt(0).toUpperCase() + resv.status.slice(1)}
+                            </span>
+                          )}
                         </div>
-                        {resv.status && (
-                          <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                            resv.status === 'approved' ? 'bg-green-100 text-green-700' :
-                            resv.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {resv.status.charAt(0).toUpperCase() + resv.status.slice(1)}
-                          </span>
-                        )}
                       </div>
                     </div>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={cancellingId === String(resv.id) || resv.status === 'cancelled'}
-                    onClick={() => handleCancelClick(resv)}
-                    className="w-full md:w-auto px-4 py-2 rounded-lg border-2 border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors font-medium disabled:border-gray-300 disabled:text-gray-400"
-                  >
-                    {cancellingId === String(resv.id) ? (
-                      <span className="flex items-center gap-2">
-                        <Loader2 size={16} className="animate-spin" />
-                        Cancelling...
-                      </span>
-                    ) : resv.status === 'cancelled' ? (
-                      "Cancelled"
-                    ) : (
-                      "Cancel Reservation"
+                    {canCancel && (
+                      <button
+                        type="button"
+                        disabled={cancellingId === String(resv.id)}
+                        onClick={() => handleCancelClick(resv)}
+                        className="w-full md:w-auto px-4 py-2 rounded-lg border-2 border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors font-medium"
+                      >
+                        {cancellingId === String(resv.id) ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 size={16} className="animate-spin" />
+                            Cancelling...
+                          </span>
+                        ) : (
+                          "Cancel Reservation"
+                        )}
+                      </button>
                     )}
-                  </button>
+                    {!canCancel && (
+                      <div className="w-full md:w-auto px-4 py-2 text-sm text-gray-500 font-medium">
+                        {isExpired ? "Expired" : resv.status === 'cancelled' ? "Cancelled" : "No actions available"}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         )}
 

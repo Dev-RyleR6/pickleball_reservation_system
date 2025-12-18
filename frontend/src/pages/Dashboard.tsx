@@ -6,9 +6,12 @@ import courtService from "../api/courtService";
 import reservationService from "../api/reservationService";
 import type { Reservation } from "../types/reservation";
 import type { Court } from "../types/court";
+import { useReservationSocket, useCourtSocket } from "../context/SocketContext";
+import { useAuth } from "../hooks/useAuth";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [currentReservation, setCurrentReservation] = useState<Reservation | null>(null);
   const [allReservations, setAllReservations] = useState<Reservation[]>([]);
@@ -47,6 +50,53 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Real-time socket listeners
+  useReservationSocket(
+    // onReservationCreated
+    (reservation) => {
+      if (reservation.user_id === user?.id) {
+        void fetchData();
+      }
+    },
+    // onReservationUpdated
+    (reservation) => {
+      if (reservation.user_id === user?.id) {
+        void fetchData();
+      }
+    },
+    // onReservationApproved
+    (reservation) => {
+      if (reservation.user_id === user?.id) {
+        void fetchData();
+      }
+    },
+    // onReservationCancelled
+    (reservation) => {
+      if (reservation.user_id === user?.id) {
+        void fetchData();
+      }
+    }
+  );
+
+  useCourtSocket(
+    // onCourtCreated
+    () => {
+      void fetchData();
+    },
+    // onCourtUpdated
+    () => {
+      void fetchData();
+    },
+    // onCourtDeleted
+    () => {
+      void fetchData();
+    },
+    // onCourtStatusChanged
+    () => {
+      void fetchData();
+    }
+  );
 
   const cancelReservation = async (reservationId: number) => {
     try {
@@ -113,34 +163,59 @@ const Dashboard: React.FC = () => {
                   <h2 className="text-xl font-semibold text-gray-800 mb-4">
                     Your Next Reservation
                   </h2>
-                  <div className="bg-white rounded-lg border border-gray-300 shadow-sm p-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="flex items-center gap-4">
+                  <div className="bg-white rounded-lg border border-gray-300 shadow-sm overflow-hidden">
+                    {(() => {
+                      const reservationCourt = allCourts.find(c => c.id === currentReservation.court_id);
+                      return reservationCourt?.image ? (
+                        <div className="w-full h-48 overflow-hidden">
+                          <img 
+                            src={reservationCourt.image.startsWith('http') ? reservationCourt.image : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}${reservationCourt.image}`}
+                            alt={currentReservation.courtName || `Court ${currentReservation.courtId}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ) : null;
+                    })()}
+                    <div className="p-6">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          {(() => {
+                            const reservationCourt = allCourts.find(c => c.id === currentReservation.court_id);
+                            if (!reservationCourt?.image) {
+                              return (
                       <div className="p-3 bg-gray-100 rounded-lg">
                         <Ticket size={24} className="text-gray-700" />
                       </div>
+                              );
+                            }
+                            return null;
+                          })()}
                       <div>
-                          <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                            {currentReservation.courtName || `Court ${currentReservation.courtId}`}
+                            <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                              {currentReservation.courtName || `Court ${currentReservation.courtId}`}
                         </h3>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <CalendarDays size={16} />
-                              <span>{new Date(currentReservation.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <CalendarDays size={16} />
+                                <span>{new Date(currentReservation.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock size={16} />
+                                <span>{currentReservation.time}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock size={16} />
-                              <span>{currentReservation.time}</span>
-                            </div>
-                          </div>
                       </div>
                     </div>
                     <button
-                        className="w-full md:w-auto bg-white text-red-600 border border-red-300 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors font-medium"
-                        onClick={() => cancelReservation(currentReservation.id as number)}
+                          className="w-full md:w-auto bg-white text-red-600 border border-red-300 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors font-medium"
+                          onClick={() => cancelReservation(currentReservation.id as number)}
                     >
                       Cancel Reservation
                     </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -186,27 +261,42 @@ const Dashboard: React.FC = () => {
                   {allCourts.map((court) => (
                   <div
                       key={court.id}
-                      className={`bg-white rounded-lg border p-6 flex flex-col transition-shadow hover:shadow-md ${
+                      className={`bg-white rounded-lg border overflow-hidden flex flex-col transition-shadow hover:shadow-md ${
                         court.availableSlots && court.availableSlots.length > 0
                         ? "border-gray-300"
                         : "border-gray-200 opacity-75"
                     }`}
                   >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="p-3 bg-gray-100 rounded-lg">
-                          <CalendarDays size={24} className="text-gray-700" />
+                      {court.image && (
+                        <div className="w-full h-48 overflow-hidden">
+                          <img 
+                            src={court.image.startsWith('http') ? court.image : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}${court.image}`}
+                            alt={court.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
                         </div>
-                        {court.availableSlots && court.availableSlots.length > 0 ? (
-                          <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded">
-                            Available
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded">
-                            {court.status === 'maintenance' ? 'Maintenance' : 'Unavailable'}
-                          </span>
-                        )}
-                      </div>
-                      
+                      )}
+                      <div className="p-6 flex flex-col flex-1">
+                        <div className="flex items-start justify-between mb-4">
+                          {!court.image && (
+                            <div className="p-3 bg-gray-100 rounded-lg">
+                              <CalendarDays size={24} className="text-gray-700" />
+                            </div>
+                          )}
+                          {court.availableSlots && court.availableSlots.length > 0 ? (
+                            <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded">
+                              Available
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded">
+                              {court.status === 'maintenance' ? 'Maintenance' : 'Unavailable'}
+                            </span>
+                          )}
+                        </div>
+                        
                     <h3 className="text-lg font-semibold mb-2 text-gray-800">{court.name}</h3>
                       
                       {court.location && (
@@ -243,6 +333,7 @@ const Dashboard: React.FC = () => {
                     >
                         {court.availableSlots && court.availableSlots.length > 0 ? "Reserve Now" : "Unavailable"}
                     </button>
+                      </div>
                   </div>
                 ))}
               </div>

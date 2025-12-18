@@ -162,7 +162,14 @@ export async function getAllReservations() {
 }
 
 export async function getReservationById(id) {
-  const [rows] = await pool.query("SELECT * FROM reservations WHERE id = ?", [id]);
+  const [rows] = await pool.query(
+    `SELECT r.*, u.name as user_name, c.name as court_name
+     FROM reservations r
+     JOIN users u ON r.user_id = u.id
+     JOIN courts c ON r.court_id = c.id
+     WHERE r.id = ?`,
+    [id]
+  );
   return rows[0];
 }
 

@@ -1,12 +1,15 @@
 import * as React from "react";
 import AppRouter from "./routes/AppRouter";
 import { NotificationProvider } from "./context/NotificationContext";
+import { SocketProvider } from "./context/SocketContext";
 
 const App: React.FC = () => {
   return (
-    <NotificationProvider>
-      <AppRouter />
-    </NotificationProvider>
+    <SocketProvider>
+      <NotificationProvider>
+        <AppRouter />
+      </NotificationProvider>
+    </SocketProvider>
   );
 };
 

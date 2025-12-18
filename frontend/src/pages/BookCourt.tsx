@@ -6,6 +6,7 @@ import courtService from "../api/courtService";
 import type { Court } from "../types/court";
 import reservationService from "../api/reservationService";
 import { useNotifications } from "../context/NotificationContext";
+import { useCourtSocket } from "../context/SocketContext";
 
 const BookCourt: React.FC = () => {
   const navigate = useNavigate();
@@ -186,6 +187,26 @@ const BookCourt: React.FC = () => {
     void fetchCourts();
   }, []);
 
+  // Real-time socket listeners for court changes
+  useCourtSocket(
+    // onCourtCreated
+    () => {
+      void courtService.getAllCourts().then(setCourts);
+    },
+    // onCourtUpdated
+    () => {
+      void courtService.getAllCourts().then(setCourts);
+    },
+    // onCourtDeleted
+    () => {
+      void courtService.getAllCourts().then(setCourts);
+    },
+    // onCourtStatusChanged - refresh when status changes
+    () => {
+      void courtService.getAllCourts().then(setCourts);
+    }
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -341,23 +362,38 @@ const BookCourt: React.FC = () => {
               {/* Selected Court Info Card */}
               <div className="lg:col-span-1">
                 {selectedCourt ? (
-                  <div className="bg-white rounded-lg border-2 border-gray-200 p-6 shadow-md sticky top-8 hover:shadow-lg transition-shadow">
-                    <div className="mb-6 pb-6 border-b border-gray-200">
-                      <div className="flex items-start gap-3 mb-4">
-                        <div className="p-3 bg-gray-100 rounded-lg">
-                          <CalendarDays size={24} className="text-gray-700" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-gray-800 mb-2 break-words">{selectedCourt.name}</h3>
-                          {selectedCourt.location && (
-                            <div className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">
-                              <MapPin size={14} className="text-gray-500 flex-shrink-0" />
-                              <span className="truncate">{selectedCourt.location}</span>
+                  <div className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden shadow-md sticky top-8 hover:shadow-lg transition-shadow">
+                    {selectedCourt.image && (
+                      <div className="w-full h-48 overflow-hidden">
+                        <img 
+                          src={selectedCourt.image.startsWith('http') ? selectedCourt.image : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}${selectedCourt.image}`}
+                          alt={selectedCourt.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="p-6">
+                      <div className="mb-6 pb-6 border-b border-gray-200">
+                        <div className="flex items-start gap-3 mb-4">
+                          {!selectedCourt.image && (
+                            <div className="p-3 bg-gray-100 rounded-lg">
+                              <CalendarDays size={24} className="text-gray-700" />
                             </div>
                           )}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-2 break-words">{selectedCourt.name}</h3>
+                            {selectedCourt.location && (
+                              <div className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                                <MapPin size={14} className="text-gray-500 flex-shrink-0" />
+                                <span className="truncate">{selectedCourt.location}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
                     {selectedCourt.availableSlots && selectedCourt.availableSlots.length > 0 ? (
                       <div>
@@ -413,6 +449,7 @@ const BookCourt: React.FC = () => {
                         <p className="text-sm text-gray-500 text-center">No available slots at the moment.</p>
                       </div>
                     )}
+                    </div>
                   </div>
                 ) : (
                   <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">

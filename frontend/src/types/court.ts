@@ -3,5 +3,6 @@ export interface Court {
   name: string;
   location: string;
   status?: string;
+  image?: string | null;
   availableSlots: string[];
 }

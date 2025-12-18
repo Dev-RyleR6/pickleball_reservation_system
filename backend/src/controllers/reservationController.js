@@ -11,6 +11,12 @@ import {  //the backend/src/controllers/reservationController.js
 } from "../models/reservationModel.js";
 
 import { sendBookingEmail } from "../utils/emailService.js";
+import {
+  emitReservationCreated,
+  emitReservationUpdated,
+  emitReservationApproved,
+  emitReservationCancelled,
+} from "../socket/socketEvents.js";
 
 export async function createReservationHandler(req, res, next) {
   try {
@@ -26,6 +32,13 @@ export async function createReservationHandler(req, res, next) {
     if (conflict) return res.status(409).json({ error: "Time slot conflicts with existing reservation" });
 
     const reservation = await createReservation({ user_id, court_id, date, start_time, end_time, status: "pending" });
+    
+    // Fetch full reservation data with court info for socket emission
+    const fullReservation = await getReservationById(reservation.id);
+    if (fullReservation) {
+      emitReservationCreated(fullReservation);
+    }
+    
     res.status(201).json({ reservation });
   } catch (err) { next(err); }
 }
@@ -125,11 +138,25 @@ export async function approveReservationHandler(req, res, next) {
       console.log("No conflict found, proceeding with approval for reservation", id);
 
       const updated = await updateReservationStatus(id, "approved");
+      
+      // Fetch full reservation data for socket emission
+      const fullReservation = await getReservationById(id);
+      if (fullReservation) {
+        emitReservationApproved(fullReservation);
+      }
+      
       // send email (fire and forget)
       sendBookingEmail(reservation.user_id, updated).catch(e => console.error("Email error:", e));
       return res.json({ reservation: updated });
     } else {
       const updated = await updateReservationStatus(id, "cancelled");
+      
+      // Fetch full reservation data for socket emission
+      const fullReservation = await getReservationById(id);
+      if (fullReservation) {
+        emitReservationCancelled(fullReservation);
+      }
+      
       return res.json({ reservation: updated });
     }
   } catch (err) { next(err); }
@@ -141,6 +168,13 @@ export async function cancelMyReservationHandler(req, res, next) {
     const user_id = req.user.id;
     const updated = await cancelReservation(id, user_id);
     if (!updated) return res.status(404).json({ error: "Reservation not found or not yours" });
+    
+    // Fetch full reservation data for socket emission
+    const fullReservation = await getReservationById(id);
+    if (fullReservation) {
+      emitReservationCancelled(fullReservation);
+    }
+    
     res.json({ reservation: updated });
   } catch (err) { next(err); }
 }

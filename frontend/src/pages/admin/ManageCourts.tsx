@@ -4,6 +4,7 @@ import AppLayout from "../../components/layout/AppLayout";
 import type { Court } from "../../types/court";
 import courtService from "../../api/courtService";
 import { useNotifications } from "../../context/NotificationContext";
+import { useCourtSocket } from "../../context/SocketContext";
 
 const ManageCourts: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -18,6 +19,8 @@ const ManageCourts: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingCourtId, setEditingCourtId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ name: "", location: "" });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const loadAllCourts = async () => {
@@ -37,6 +40,26 @@ const ManageCourts: React.FC = () => {
   useEffect(() => {
     void loadAllCourts();
   }, []);
+
+  // Real-time socket listeners for court changes
+  useCourtSocket(
+    // onCourtCreated
+    (court) => {
+      void loadAllCourts();
+    },
+    // onCourtUpdated
+    (court) => {
+      void loadAllCourts();
+    },
+    // onCourtDeleted
+    (courtId) => {
+      void loadAllCourts();
+    },
+    // onCourtStatusChanged
+    (court) => {
+      void loadAllCourts();
+    }
+  );
 
   const handleStatusToggle = async (id: number, currentStatus: string | undefined) => {
     try {
@@ -73,6 +96,8 @@ const ManageCourts: React.FC = () => {
   const handleEditClick = (court: Court) => {
     setEditingCourtId(court.id);
     setFormData({ name: court.name, location: court.location || "" });
+    setImageFile(null);
+    setImagePreview(court.image ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}${court.image}` : null);
     setShowForm(true);
     setError("");
     setSuccess("");
@@ -82,6 +107,20 @@ const ManageCourts: React.FC = () => {
     setShowForm(false);
     setEditingCourtId(null);
     setFormData({ name: "", location: "" });
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmitCourt = async (e: React.FormEvent) => {
@@ -90,8 +129,15 @@ const ManageCourts: React.FC = () => {
       setSubmitting(true);
       setError("");
       
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("location", formData.location);
+      if (imageFile) {
+        formDataToSend.append("image", imageFile);
+      }
+      
       if (editingCourtId) {
-        await courtService.updateCourt(editingCourtId, formData);
+        await courtService.updateCourtWithImage(editingCourtId, formDataToSend);
         addNotification({
           type: "info",
           title: "Court Updated",
@@ -100,7 +146,7 @@ const ManageCourts: React.FC = () => {
         });
         setSuccess("Court updated successfully!");
       } else {
-        await courtService.addCourt(formData);
+        await courtService.addCourtWithImage(formDataToSend);
         addNotification({
           type: "success",
           title: "New Court Added",
@@ -111,6 +157,8 @@ const ManageCourts: React.FC = () => {
       }
       
       setFormData({ name: "", location: "" });
+      setImageFile(null);
+      setImagePreview(null);
       setShowForm(false);
       setEditingCourtId(null);
       await loadAllCourts();
@@ -173,6 +221,8 @@ const ManageCourts: React.FC = () => {
                 setShowForm(true);
                 setEditingCourtId(null);
                 setFormData({ name: "", location: "" });
+                setImageFile(null);
+                setImagePreview(null);
               }
             }}
             className="flex items-center gap-2 bg-gray-800 text-white px-6 py-2.5 rounded-lg hover:bg-gray-900 transition-all font-semibold shadow-md active:scale-95"
@@ -224,6 +274,25 @@ const ManageCourts: React.FC = () => {
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent outline-none transition-all bg-white text-gray-800 placeholder-gray-400"
                 />
               </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Court Image (Optional)</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={handleImageChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent outline-none transition-all bg-white text-gray-800 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                />
+                <p className="text-xs text-gray-500 mt-1">Upload an image of the court (JPEG, PNG, GIF, or WebP, max 5MB)</p>
+                {imagePreview && (
+                  <div className="mt-3">
+                    <img 
+                      src={imagePreview} 
+                      alt="Court preview" 
+                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    />
+                  </div>
+                )}
+              </div>
               <div className="md:col-span-2 flex justify-end gap-3">
                 <button
                   type="button"
@@ -262,25 +331,40 @@ const ManageCourts: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courts.map((court) => (
-              <div key={court.id} className="bg-white border-2 border-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 bg-gray-100 rounded-lg">
-                    <Grid3X3 size={24} className="text-gray-700" />
+              <div key={court.id} className="bg-white border-2 border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
+                {court.image && (
+                  <div className="w-full h-48 overflow-hidden">
+                    <img 
+                      src={court.image.startsWith('http') ? court.image : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"}${court.image}`}
+                      alt={court.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
-                  <span className={`px-2.5 py-1 text-xs font-bold rounded-full border ${
-                    court.status === 'available' 
-                      ? 'bg-green-50 text-green-700 border-green-200' 
-                      : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                  }`}>
-                    {court.status?.toUpperCase() || 'AVAILABLE'}
-                  </span>
-                </div>
-                
-                <h3 className="text-xl font-bold text-gray-800 mb-1">{court.name}</h3>
-                <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-6">
-                  <MapPin size={16} />
-                  <span>{court.location || 'Facility Center'}</span>
-                </div>
+                )}
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="flex items-start justify-between mb-4">
+                    {!court.image && (
+                      <div className="p-3 bg-gray-100 rounded-lg">
+                        <Grid3X3 size={24} className="text-gray-700" />
+                      </div>
+                    )}
+                    <span className={`px-2.5 py-1 text-xs font-bold rounded-full border ${
+                      court.status === 'available' 
+                        ? 'bg-green-50 text-green-700 border-green-200' 
+                        : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                    }`}>
+                      {court.status?.toUpperCase() || 'AVAILABLE'}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-800 mb-1">{court.name}</h3>
+                  <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-6">
+                    <MapPin size={16} />
+                    <span>{court.location || 'Facility Center'}</span>
+                  </div>
 
                 <div className="mt-auto pt-6 border-t border-gray-100 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
@@ -335,6 +419,7 @@ const ManageCourts: React.FC = () => {
                       Delete Court
                     </button>
                   )}
+                </div>
                 </div>
               </div>
             ))}
